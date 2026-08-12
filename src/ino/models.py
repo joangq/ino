@@ -1,6 +1,6 @@
 from typing import Any
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 
 
 class PortProperties(BaseModel):
@@ -56,14 +56,6 @@ class Library(BaseModel):
     compatible_with: dict[str, Any] = Field(default_factory=dict)
 
 
-class InstalledLibrary(BaseModel):
-    library: Library
-
-
-class LibraryList(BaseModel):
-    installed_libraries: list[InstalledLibrary] = Field(default_factory=list)
-
-
 class Pin(BaseModel):
     pin: int
     tag: str
@@ -80,3 +72,11 @@ class Sketch(BaseModel):
 
 class InoProject(BaseModel):
     sketch: Sketch
+
+
+class InstalledLibrary(BaseModel):
+    library: Library
+
+
+class LibList(BaseModel):
+    installed_libraries: list[InstalledLibrary] = Field(default_factory=list)

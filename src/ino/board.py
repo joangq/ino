@@ -90,13 +90,19 @@ class BoardFactory:
         return None
 
 
-    def resolve[T: Board](self, board_type: type[T]) -> T:
-        board_list = self.cli.board().list().run()
-        
-        for detected_port in board_list.detected_ports:
-            board = self.match_port(detected_port, board_type)
+    def resolve[T: Board](self, board_type: type[T], *, attempts: int = 3) -> T:
+        """Resolve a connected board of the given type.
 
-            if board is not None:
-                return board
+        arduino-cli board discovery is flaky and may return an empty port list
+        even when the board is connected; we retry a few times before failing.
+        """
+        for _ in range(attempts):
+            board_list = self.cli.board().list().run()
+
+            for detected_port in board_list.detected_ports:
+                board = self.match_port(detected_port, board_type)
+
+                if board is not None:
+                    return board
 
         raise ValueError(f'Board {board_type.name} not found')

@@ -2,7 +2,7 @@ from ino.cmd import CommandRunner
 from argbuilder import Command as CommandBase, Field
 from pathlib import Path
 from shutil import which
-from .models import BoardList
+from .models import BoardList, LibList
 from typing import Any, cast, Never, override
 import subprocess
 from ino.loggable import Loggable
@@ -47,6 +47,13 @@ class ArduinoCli(Command):
             return arduino_cli_path
         
         options = [
+            # Linux
+            Path('.').resolve() / 'arduino-cli',
+            Path('.').resolve() / 'bin' / 'arduino-cli',
+            Path('..').resolve() / 'bin' / 'arduino-cli',
+            Path('../..').resolve() / 'bin' / 'arduino-cli',
+
+            # Windows
             Path('.').resolve() / 'arduino-cli.exe',
             Path('.').resolve() / 'bin' / 'arduino-cli.exe',
             Path('..').resolve() / 'bin' / 'arduino-cli.exe',
@@ -62,6 +69,13 @@ class ArduinoCli(Command):
     class lib(Command):
         class list(Command):
             format: str = Field('--format={value}', default='json')
+
+            def run(self, **kwargs) -> Any:
+                return super().run(**kwargs).and_then(
+                    (lambda x: LibList.model_validate_json(
+                        x.stdout.decode('utf-8')
+                    ))
+                )
     
     class compile(Command):
         fqbn: str = Field('--fqbn={value}')
@@ -80,7 +94,11 @@ class ArduinoCli(Command):
     class board(Command):
         class list(Command):
             format: str = Field(parts=['--format={value}'], default='json')
-            
+            discovery_timeout: str = Field(
+                parts=['--discovery-timeout={value}'],
+                default='5s',
+            )
+
             def run(self, **kwargs) -> BoardList: # ty: ignore[invalid-method-override]
                 return ( super().run()
                         .or_else(

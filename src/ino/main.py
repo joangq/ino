@@ -46,14 +46,16 @@ class CommandState(Loggable):
         logger: LoggerLike | logging.Logger,
         command: str,
         loglevel: str = "INFO",
+        cli: ArduinoCli | None = None,
     ) -> None:
+        self.cli = cli or ArduinoCli()
         self.set_logger(self._get_child_logger(logger, command, loglevel))
 
         self.path = path
         self.config_path = path / "ino.toml"
 
         self.config = self._load_config()
-        self.arduino = self._create_arduino()
+        self.arduino = self._create_arduino(self.cli)
 
     @staticmethod
     def _get_child_logger(
@@ -80,20 +82,31 @@ class CommandState(Loggable):
                 f"Failed to load {self.config_path}: {exc}"
             ) from exc
 
-    def _create_arduino(self):
+    def _create_arduino(self, cli: ArduinoCli):
         board = make_board(self.config.sketch.board)
 
-        cli = ArduinoCli()
         cli.set_logger(self.logger.getChild("ArduinoCli"))
 
         return BoardFactory(cli).resolve(board)
 
+    def check_libs(self) -> None:
+        lib_list = self.cli.lib().list().run()
+        
+        for lib in self.config.sketch.dependencies:
+            if not any(lib == installed_lib.library.name for installed_lib in lib_list.installed_libraries):
+                raise click.ClickException(f"Library '{lib}' not found")
+
+
     def compile(self) -> None:
+        self.check_libs()
+
         self.logger.info(f"Compiling project '{self.config.sketch.name}'")
         self.logger.info(f"Target: board '{self.arduino.fqbn}'")
         self.arduino.compile(self.path)
 
     def upload(self) -> None:
+        self.check_libs()
+
         self.logger.info(f"Uploading project '{self.config.sketch.name}'")
         self.logger.info(f"Target: board '{self.arduino.fqbn}' at port '{self.arduino.port}'")
         self.arduino.upload(self.path)
