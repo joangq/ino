@@ -1,0 +1,1 @@
+from ino.main import main

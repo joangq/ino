@@ -1,0 +1,22 @@
+[project]
+name = "ino"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Joan Gonzalez", email = "jgquiroga@dc.uba.ar" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.4.2",
+    "pydantic>=2.13.4",
+    "rich>=15.0.0",
+    "tomli-w>=1.2.0",
+]
+
+[project.scripts]
+ino = "ino:main"
+
+[build-system]
+requires = ["uv_build>=0.8.9,<0.9.0"]
+build-backend = "uv_build"
