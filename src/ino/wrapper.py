@@ -8,6 +8,7 @@ import subprocess
 from ino.loggable import Loggable
 from ino.common import throw
 from ino.loggable import log
+import platform
 
 class Command(CommandBase, Loggable):
     @override
@@ -46,19 +47,26 @@ class ArduinoCli(Command):
         if arduino_cli_path is not None:
             return arduino_cli_path
         
-        options = [
-            # Linux
+        linux_options = [
             Path('.').resolve() / 'arduino-cli',
             Path('.').resolve() / 'bin' / 'arduino-cli',
             Path('..').resolve() / 'bin' / 'arduino-cli',
             Path('../..').resolve() / 'bin' / 'arduino-cli',
-
-            # Windows
+        ]
+        
+        windows_options = [
             Path('.').resolve() / 'arduino-cli.exe',
             Path('.').resolve() / 'bin' / 'arduino-cli.exe',
             Path('..').resolve() / 'bin' / 'arduino-cli.exe',
             Path('../..').resolve() / 'bin' / 'arduino-cli.exe',
         ]
+
+        if platform.system() == 'Linux':
+            options = linux_options
+        elif platform.system() == 'Windows':
+            options = windows_options
+        else:
+            raise ValueError(f'Unsupported system: {platform.system()}')
 
         for option in options:
             if option.exists():
